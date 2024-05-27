@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd 
-import pyodbc
 from datetime import datetime
 
 import warnings
@@ -204,7 +203,7 @@ class data:
         self.eom = np.array([[[d for d in dates if (d.month == m) & (d.year == y)][-1] for m in self.list_months if len([d for d in dates if (d.month == m) & (d.year == y)])>0] for y in self.list_years])
         self.eoy = np.array([e[-1] for e in self.eom])
         
-    def remove_outliers(self):
+    def remove_outliers(self, val_out=0.9):
         """
         Remove outliers from the dataset based on log returns.
     
@@ -223,4 +222,4 @@ class data:
     
         """
         
-        self.df = self.df[(self.df['log_ret'] < 0.9) & (self.df['log_ret'] > -0.9)].reset_index(drop=True)
+        self.df = self.df[(self.df['log_ret'] < val_out) & (self.df['log_ret'] > -val_out)].reset_index(drop=True)

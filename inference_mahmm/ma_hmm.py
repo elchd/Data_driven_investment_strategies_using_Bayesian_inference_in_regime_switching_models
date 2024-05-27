@@ -1,18 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from prob_distrib import *
-import tqdm.notebook as tq
-from scipy.stats import norm
-from scipy import stats
-from scipy.special import logsumexp 
-import random
+from .prob_distrib import *
 import itertools
-from collections import Counter
-from pathlib import Path
 import pickle
 import os
 
-class lma_hmm:
+class ma_hmm:
     def __init__(self, ν, Q, M, Σ, T, L, train_test_split=0.7):
         """
         Initialize the lma_hmm class with the given parameters.
@@ -112,7 +104,7 @@ class lma_hmm:
         """
         
         if precalc:
-            with open(os.getcwd() + '/all_combi.pkl', 'rb') as f:
+            with open(os.path.dirname(__file__) + '/all_combi.pkl', 'rb') as f:
                 x = pickle.load(f)
             self.combi = x[self.K][self.L][0]
             self.permu = x[self.K][self.L][1]

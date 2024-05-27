@@ -1,13 +1,11 @@
 import numpy as np
-from random_sample_jit import *
-from lma_hmm import *
+from .random_sample import *
+from .ma_hmm import *
 import tqdm.notebook as tq
-from multiprocessing import Pool
 import warnings
-import numpy as np
 
 
-class gibbs(lma_hmm):
+class gibbs(ma_hmm):
     def __init__(self, K, L, train_test_split = 0.7, y = None, index_is_oos=None):
         """
         Initialize the Gibbs sampler class for LMA-HMM with the given parameters.
