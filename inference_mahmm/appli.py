@@ -2,8 +2,27 @@ from .ma_hmm import *
 from .gibbs import *
 from .data import *
 
-def compute_price(r, log = True): 
-    price = np.ones(len(r)) * 100
+def compute_price(r, log = True, nominal = 100): 
+    """
+    Compute the price series based on returns.
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        The time-series of returns.
+    log : bool, optional
+        If True, compute prices using logarithmic returns. If False, use arithmetic returns. 
+        Defaults is True.
+    nominal : float, optional
+        The initial price (default is 100).
+
+    Returns
+    -------
+    numpy.ndarray
+        The time-series of computed prices.
+
+    """
+    price = np.ones(len(r)) * nominal
     
     if log:
         for t in range(1, len(r)):
@@ -19,18 +38,17 @@ def moving_average(y, n):
 
     Parameters
     ----------
-    y : ndarray
-        Input time series data.
+    y : numpy.ndarray
+        The input time series data.
     n : int
         Window size for the moving average.
 
     Returns
     -------
-    ndarray
-        Array containing the moving averages.
+    numpy.ndarray
+        The time-series of the moving averages.
 
     """
-    
     return(np.array([y[t:t+n+1].sum()/(n+1) for t in range(len(y)-n)]))
 
 def compute_accuracy(x, true_x):
@@ -39,10 +57,10 @@ def compute_accuracy(x, true_x):
 
     Parameters
     ----------
-    x : ndarray
-        Predicted sequence.
-    true_x : ndarray
-        True sequence.
+    x : numpy.ndarray
+        The predicted sequence.
+    true_x : numpy.ndarray
+        The true sequence.
 
     Returns
     -------
@@ -58,8 +76,8 @@ def compute_shift_rate(x):
 
     Parameters
     ----------
-    x : ndarray
-        Input sequence.
+    x : numpy.ndarray
+        The input sequence.
 
     Returns
     -------
@@ -75,8 +93,8 @@ def compute_average_length_states(x):
 
     Parameters
     ----------
-    x : ndarray
-        Input sequence of states.
+    x : numpy.ndarray
+        The input sequence of states.
 
     Returns
     -------
@@ -108,10 +126,10 @@ def compute_back_and_forth_rate(x, n=1):
 
     Parameters
     ----------
-    x : ndarray
+    x : numpy.ndarray
         Input sequence.
     n : int
-        Length threshold for a state to be considered a false signal.
+        Length threshold for a state to be considered a false signal (default is 1).
 
     Returns
     -------
@@ -140,34 +158,34 @@ def compute_back_and_forth_rate(x, n=1):
 
 def get_strat(x, fees, risky, riskfree, nominal, type_strat):
     """
-    Compute trading strategy price and performances based on hidden states signal.
+    Return the time-series of prices and returns of a trading strategy based on hidden states signal.
 
     Parameters
     ----------
-    x : ndarray
-        Input signals.
+    x : numpy.ndarray
+        The time-series of hidden states.
     fees : float
-        Transaction fees.
-    risky : ndarray
-        Log-returns of risky asset.
-    riskfree : ndarray
-        Log-returns of risk-free asset.
+        The transaction cost rate.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
     nominal : float
-        Initial nominal value.
+        The initial nominal value of the strategy.
     type_strat : str
-        Type of trading strategy.
+        Type of strategy (binary or continuous).
 
     Returns
     -------
-    prix_perf : list
-        List of performance values.
-    perf_strat : ndarray
-        Array of performance values.
+    prix_perf : numpy.ndarray
+        The time-series of the trading strategy prices.
+    perf_strat : numpy.ndarray
+        The time-series of the trading strategy returns.
 
     """
     
     T = len(risky)
-    if type_strat=='weighted':
+    if type_strat=='continuous':
         on_off = np.array(x).mean(axis=0)
         on_off = (on_off-on_off.min())/(on_off.max()-on_off.min())
     else:
@@ -182,28 +200,24 @@ def get_strat(x, fees, risky, riskfree, nominal, type_strat):
     prix_perf = [nominal]
     for t in range(1,len(perf_strat)):
         prix_perf.append(prix_perf[-1]*np.exp(perf_strat[t]))
-    
+    prix_perf = np.array(prix_perf)
+
     return (prix_perf, perf_strat)
 
 def get_fees_strat(x, fees, risky, type_strat):
     """
-    Calculate the total transaction fees incurred by a trading strategy.
+    Compute the total transaction fees incurred by a trading strategy.
 
     Parameters
     ----------
-    x : ndarray
-        The strategy's allocation weights or signals over time.
-    regimes_on : Unused variable.
+    x : numpy.ndarray
+        The time-series of hidden states.
     fees : float
-        Transaction cost rate.
-    risky : ndarray
-        Time series of returns on a risky asset.
-    riskfree : ndarray
-        Time series of returns on a risk-free asset.
-    nominal : float
-        Initial nominal value of the portfolio.
+        The transaction cost rate.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
     type_strat : str
-        Type of strategy used.
+        Type of strategy (binary or continuous).
 
     Returns
     -------
@@ -212,7 +226,7 @@ def get_fees_strat(x, fees, risky, type_strat):
     """
     
     T = len(risky)
-    if type_strat=='weighted':
+    if type_strat=='continuous':
         on_off = np.array(x).mean(axis=0)
         on_off = (on_off-on_off.min())/(on_off.max()-on_off.min())
     else:
@@ -224,11 +238,61 @@ def get_fees_strat(x, fees, risky, type_strat):
     
     return np.sum(fees_list)
 
-def compute_perf_strat(x, risky, riskfree, type_strat = 'average', fees = 0.001, nominal = 100):
+def compute_perf_strat(x, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the performance of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The performance of the strategy.
+
+    """
     strat, _ = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     return (strat[-1] / strat[0] - 1)*100
 
-def compute_perf_strat_yearly(x, date, risky, riskfree, type_strat = 'average', fees=0.001, nominal=100):
+def compute_perf_strat_yearly(x, date, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the annual performances of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    date : numpy.ndarray
+        The series of dates.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The annual performances of the strategy.
+
+    """
     strat, _ = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     strat = np.array(strat)
     perf_annual = []
@@ -244,11 +308,61 @@ def compute_perf_strat_yearly(x, date, risky, riskfree, type_strat = 'average', 
         
     return perf_annual
 
-def compute_avg_vol_strat(x, risky, riskfree, type_strat='average', fees=0.001, nominal=100):
+def compute_avg_vol_strat(x, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the volatility of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The volatility of the strategy.
+
+    """
     _, perf = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     return (np.std(perf) * np.sqrt(252))*100
 
-def compute_avg_vol_strat_yearly(x, date, risky, riskfree, type_strat = 'average', fees=0.001, nominal=100):
+def compute_avg_vol_strat_yearly(x, date, risky, riskfree, type_strat = 'binary', fees=0.001, nominal=100):
+    """
+    Return the annual volatilities of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    date : numpy.ndarray
+        The series of dates.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The annual volatilities of the strategy.
+
+    """
     _, perf = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     vol_annual = []
     year_end = date[0]
@@ -265,6 +379,32 @@ def compute_avg_vol_strat_yearly(x, date, risky, riskfree, type_strat = 'average
     return vol_annual
 
 def compute_avg_vol_strat_monthly(perf, date):
+    """
+    Return the monthly volatilities of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    date : numpy.ndarray
+        The series of dates.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The monthly volatilities of the strategy.
+
+    """
     vol_monthly = []
     year_month_end = str(date[0].year) + '-' + str(date[0].month).zfill(2)
 
@@ -279,12 +419,62 @@ def compute_avg_vol_strat_monthly(perf, date):
         
     return vol_monthly
 
-def compute_mdd_strat(x, risky, riskfree, type_strat='average', fees=0.001, nominal=100):
+def compute_mdd_strat(x, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the maximum draw-down of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The maximum draw-down of the strategy.
+
+    """
     _, perf = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     cum_perf = pd.Series((1 + perf).cumprod())
     return (cum_perf.cummax() - cum_perf).max()
 
-def compute_mdd_strat_yearly(x, date, risky, riskfree, type_strat='average', fees=0.001, nominal=100):
+def compute_mdd_strat_yearly(x, date, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the annual maximum draw-downs of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    date : numpy.ndarray
+        The series of dates.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The annual maximum draw-downs of the strategy.
+
+    """
     _, perf = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     mdd_annual = []
     year_end = date[0]
@@ -301,19 +491,119 @@ def compute_mdd_strat_yearly(x, date, risky, riskfree, type_strat='average', fee
         
     return mdd_annual
 
-def compute_sr_strat(x, risky, riskfree, type_strat='average', fees=0.001, nominal=100):
+def compute_sr_strat(x, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the Sharpe ratio of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The Sharpe ratio of the strategy.
+
+    """
     return compute_perf_strat(x, risky, riskfree, type_strat, fees, nominal) / compute_avg_vol_strat(x, risky, riskfree, type_strat, fees, nominal)
 
-def compute_sr_strat_yearly(x, date, risky, riskfree, type_strat='average', fees=0.001, nominal=100):
+def compute_sr_strat_yearly(x, date, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the annual Sharpe ratios of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    date : numpy.ndarray
+        The series of dates.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The annual Sharpe ratios of the strategy.
+
+    """
     perf = compute_perf_strat_yearly(x, date, risky, riskfree, type_strat, fees, nominal)
     vol = compute_avg_vol_strat_yearly(x, date, risky, riskfree, type_strat, fees, nominal)
     return np.array(perf)/np.array(vol)
 
-def compute_ir_strat(x, risky, riskfree, type_strat = 'average', fees=0.001, nominal=100):
+def compute_ir_strat(x, risky, riskfree, type_strat = 'binary', fees=0.001, nominal=100):
+    """
+    Return the information ratio of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The information ratio of the strategy.
+
+    """
     _, perf = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     return np.mean(perf - risky[-len(perf):])/np.std(perf - risky[-len(perf):])
 
-def compute_ir_strat_yearly(x, date, risky, riskfree, type_strat='average', fees=0.001, nominal=100):
+def compute_ir_strat_yearly(x, date, risky, riskfree, type_strat='binary', fees=0.001, nominal=100):
+    """
+    Return the annual information ratios of a trading strategy based on hidden states signal.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The time-series of hidden states.
+    date : numpy.ndarray
+        The series of dates.
+    risky : numpy.ndarray
+        The time-series of a risky asset log-returns.
+    riskfree : numpy.ndarray
+        The time-series of a risk-free asset log-returns.
+    type_strat : str
+        Type of strategy (binary or continuous). Default is binary.
+    fees : float
+        The transaction cost rate (default is 0.1%).
+    nominal : float
+        The initial nominal value of the strategy (default is 100).
+
+    Returns
+    -------
+    float
+        The annual information ratios of the strategy.
+
+    """
     _, perf = get_strat(x, fees, risky, riskfree, nominal, type_strat)
     ir_annual = []
     year_end = date[0]

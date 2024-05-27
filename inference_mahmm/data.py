@@ -9,7 +9,7 @@ warnings.filterwarnings('ignore')
 class data:
     def __init__(self, code, date_start, date_fin_is, L, path):
         """
-        Initializes the data class with the given parameters.
+        Initialize the data class with the given parameters.
         
         Parameters
         ----------
@@ -25,16 +25,15 @@ class data:
             The path of the CSV file containing the data. 
 
         """
-        
         self.path = path
         self.code = code
         self.L = L
-        self.get(code, date_start)
+        self.get(date_start)
         self.split_is_oos(date_fin_is)
    
     def moving_average(self, y):
         """
-        Calculate the moving average of a given time series over a window of size 'L' using a sliding window approach
+        Compute the moving average of a given time series over a window of size 'L' using a sliding window approach
 
         Parameters
         ----------
@@ -47,7 +46,6 @@ class data:
             An array containing the moving averages.
     
         """
-        
         return np.array([y[t:t+self.L].sum()/self.L for t in range(len(y)-self.L)])  
    
     def compute_price(self, r, log = True): 
@@ -72,7 +70,6 @@ class data:
         If 'log' is True, it uses logarithmic computation, otherwise it uses regular percentage returns.
     
         """
-
         price = np.ones(len(r)) * 100
         
         if log:
@@ -83,7 +80,7 @@ class data:
                 price[t] = price[t-1] * (1 + r[t])  
         return price
    
-    def get(self, code, date_start):
+    def get(self, date_start):
         """
         Retrieve and preprocess the data for further analysis.
     
@@ -94,23 +91,18 @@ class data:
         date_start : str
             The starting date for data retrieval (format: 'dd/mm/YYYY').
     
-        Returns
-        -------
-        None
-    
         Notes
         -----
         This method performs the following steps:
-        1. Reads the data from the specified CSV file, selecting relevant columns.
-        2. Converts the date column to datetime format.
-        3. Filters the data to include only records after the specified start date.
-        4. Computes percentage changes and log returns.
-        5. Removes any NaN values.
-        6. Sets class attributes for date, price, percentage changes, log returns, etc.
-        7. Applies moving averages and computes adjusted price series.
+            1. Reads the data from the specified CSV file, selecting relevant columns.
+            2. Converts the date column to datetime format.
+            3. Filters the data to include only records after the specified start date.
+            4. Computes percentage changes and log returns.
+            5. Removes any NaN values.
+            6. Sets class attributes for date, price, percentage changes, log returns, etc.
+            7. Applies moving averages and computes adjusted price series.
     
         """
-    
         df = pd.read_csv(self.path, delimiter=';', decimal=',') 
         df = df[['date', self.code]]
         df.columns = ['date', 'price']
@@ -135,16 +127,12 @@ class data:
         
     def split_is_oos(self, date_fin_is):
         """
-        Split the data into in-sample (IS) and out-of-sample (OOS) sets based on a given date.
+        Split the data into in-sample (or training) and out-of-sample (or testing) sets based on a given date.
     
         Parameters
         ----------
         date_fin_is : date
             The date marking the end of the in-sample period.
-    
-        Returns
-        -------
-        None
     
         Notes
         -----
@@ -185,15 +173,12 @@ class data:
         dates : array-like
             An array containing date objects.
     
-        Returns
-        -------
-        None
-    
         Notes
         -----
         This method takes an array of date objects and performs the following steps:
         1. Creates lists of months (list_months) and unique years (list_years) from the provided dates.
-        2. Constructs a 3D array (eom) where each element corresponds to the end-of-month date for a specific year and month combination.
+        2. Constructs a 3D array (eom) where each element corresponds to the end-of-month date for a specific year and 
+           month combination.
         3. Extracts the end-of-year dates (eoy) from the eom array.
     
         """
@@ -209,17 +194,8 @@ class data:
     
         Parameters
         ----------
-        None
-    
-        Returns
-        -------
-        None
-    
-        Notes
-        -----
-        This method filters the dataset to include only records where log returns fall within the range (-0.9, 0.9).
-        Any records outside this range are considered outliers and are removed.
+        val_out : float, optional
+            Threshold value for filtering outliers (Only data points with log returns within the range [-val_out, val_out] are kept).
     
         """
-        
         self.df = self.df[(self.df['log_ret'] < val_out) & (self.df['log_ret'] > -val_out)].reset_index(drop=True)

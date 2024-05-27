@@ -24,9 +24,14 @@ def pdf_normal(x, μ, σ):
     float
         Value of the PDF at x.
 
+    Notes
+    -----
+    This function uses Just-In-Time (JIT) compilation.
+
     """
     return (1/np.sqrt(2*np.pi*σ**2))*np.exp(-(x-μ)**2/(2*σ**2))
-        
+
+@njit       
 def pdf_normal_log(x, μ, σ):
     """
     Probability density function (PDF) of a normal distribution.
@@ -46,6 +51,10 @@ def pdf_normal_log(x, μ, σ):
     -------
     float
         Value of the PDF at x.
+
+    Notes
+    -----
+    This function uses Just-In-Time (JIT) compilation.
 
     """
     return -(x-μ)**2/(2*σ**2) - np.log(σ*np.sqrt(2*np.pi))
@@ -77,7 +86,6 @@ def get_pdf(params, name, log = False):
     - For dirichlet distribution, params should be a list of α values.
 
     """
-    
     if name == 'gaussian':
         def f_x(x):
             μ, σ = params[0], params[1]
@@ -117,7 +125,11 @@ def get_pdf(params, name, log = False):
                     return(- (np.sum(np.log([ma.gamma(α[i]) for i in range(K)])) - np.log(ma.gamma(np.sum(α)))) + np.sum([(α[i]-1) * np.log(x[i]) for i in range(K)]))
                 else:
                     return((1 / (np.prod([ma.gamma(α[i]) for i in range(K)]) / ma.gamma(np.sum(α)))) * np.prod([x[i]**(α[i]-1) for i in range(K)]))     
-        
+    
+    else:
+        print(f'Error: distribution type <{name}> not handled')
+        return 
+    
     return f_x
     
 def get_ll(params, name):
@@ -170,5 +182,10 @@ def get_ll(params, name):
             else:
                 f_x = get_pdf(params, 'dirichlet', log = True)
                 return(np.sum(f_x(x)))
+            
+    else:
+        print(f'Error: distribution type <{name}> not handled')
+        return 
+    
     return(ll_x)
 

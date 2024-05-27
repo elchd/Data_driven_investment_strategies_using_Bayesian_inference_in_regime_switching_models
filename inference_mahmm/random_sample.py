@@ -20,11 +20,9 @@ def sample_normal(μ, σ):
 
     Notes
     -----
-    This function uses Just-In-Time (JIT) compilation to efficiently generate random samples from a multivariate normal distribution 
-    specified by the provided means and standard deviations.
+    This function uses Just-In-Time (JIT) compilation.
 
     """
-    
     return np.array([np.random.normal(μ[i], σ[i]) for i in range(len(μ))])
     
 def sample_dirichlet(α):
@@ -63,7 +61,7 @@ def sample_uniform(l, h):
 
     Notes
     -----
-    This function uses Just-In-Time (JIT) compilation to efficiently generate a random sample from a uniform distribution within the specified range.
+    This function uses Just-In-Time (JIT) compilation.
 
     """
     if h < l:
@@ -88,8 +86,11 @@ def sample_gamma(α, β):
     ndarray
         Sampled values from the gamma distribution.
 
+    Notes
+    -----
+    This function uses Just-In-Time (JIT) compilation. 
+
     """
-    
     return np.array([np.random.gamma(α, 1/β[i]) for i in range(len(β))])
 
 @njit
@@ -109,8 +110,11 @@ def sample_invgamma(α, β):
     ndarray
         Sampled values from the inverse gamma distribution.
 
+    Notes
+    -----
+    This function uses Just-In-Time (JIT) compilation.
+
     """
-    
     return np.array([np.random.gamma(α, β[i])**(-1) for i in range(len(β))])
 
 def sample_invgamma2(α, β):
@@ -129,6 +133,9 @@ def sample_invgamma2(α, β):
     ndarray
         Sampled values from the inverse gamma distribution.
 
+    Notes
+    -----
+    This function uses Just-In-Time (JIT) compilation.
+
     """
-    
     return(np.array([np.random.gamma(α[i], β[i])**(-1) for i in range(len(β))]))
